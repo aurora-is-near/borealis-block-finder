@@ -1,0 +1,21 @@
+[package]
+name = "borealis-block-finder"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aurora-standalone-engine = { path = "../borealis-engine-lib/engine" }
+aurora-refiner-lib = { path = "../borealis-engine-lib/refiner-lib" }
+aurora-refiner-types = { path = "../borealis-engine-lib/refiner-types" }
+
+serde_json = "1.0.83"
+serde = { version = "1", features = [ "derive" ] }
+clap = { version = "3.2.7", features = ["derive"] }
+
+tokio = { version = "1.1", features = ["sync", "time", "macros", "rt-multi-thread"] }
+tokio-stream = { version = "0.1" }
+
+# NEAR Lake Framework
+near-lake-framework = "0.3.0"
