@@ -28,18 +28,25 @@ async fn main() {
         serde_json::from_reader(reader).unwrap()
     };
 
-    // Get start block
-    let height = args.height;
-    let (last_block, next_block) = if let Some(height) = height {
-        (height.checked_sub(1), height)
+    // Get start and end block heights
+    let height_start = args.near_block_height_start;
+    let (height_last, height_next) = if let Some(height_start) = height_start {
+        (height_start.checked_sub(1), height_start)
     } else {
-        (None, config.initial_height)
+        (None, config.height_start_default)
+    };
+
+    let height_end = args.near_block_height_end;
+    let height_end = if let Some(height_end) = height_end {
+        height_end
+    } else {
+        u64::MAX
     };
 
     // Build input stream
     let mut input_stream = match config.input_mode {
         InputMode::DataLake(config) => {
-            input::data_lake::get_near_data_lake_stream(next_block, &config)
+            input::data_lake::get_near_data_lake_stream(height_next, &config)
         }
         _ => panic!("For the moment there is only support for DataLake InputMode.")
         };
@@ -58,7 +65,7 @@ async fn main() {
         config.refiner.chain_id).unwrap();
     let mut near_to_aurora_stream = NearStream::new(
         config.refiner.chain_id,
-        last_block,
+        height_last,
         ctx);
 
     // Build matcher
@@ -68,6 +75,11 @@ async fn main() {
     while let Some(message) = input_stream.recv().await {
 
         let near_block = message.block;
+
+        if near_block.block.header.height > height_end {
+            break;
+        }
+
         let aurora_blocks = near_to_aurora_stream.next_block(&near_block);
 
         if matcher.matches(&near_block, &aurora_blocks)

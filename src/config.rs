@@ -2,10 +2,10 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Config {
+    pub height_start_default: u64, //ToDo in json
     pub refiner: Refiner,
     pub output_storage: OutputStoreConfig,
     pub input_mode: InputMode,
-    pub initial_height: u64,
 }
 
 #[derive(Deserialize, Clone, Debug)]

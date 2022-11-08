@@ -9,10 +9,15 @@ pub struct Cli {
     #[clap(short, long)]
     pub config_path: Option<String>,
 
-    /// [Optional] Start refiner from specified height.
+    /// [Optional] Starts refiner from specified height.
     /// If this value is not passed, first height will be used.
     #[clap(short = 'n', long)]
-    pub height: Option<u64>,
+    pub near_block_height_start: Option<u64>,
+
+    /// [Optional] Ends refiner in the specified height.
+    /// If this value is not passed, last height will be used.
+    #[clap(short = 'n', long)]
+    pub near_block_height_end: Option<u64>,
 
     /// [Optional] Near block expression to match.
     /// If this value is not passed it will not be used to find matches.
