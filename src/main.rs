@@ -36,12 +36,7 @@ async fn main() {
         (None, config.height_start_default)
     };
 
-    let height_end = args.near_block_height_end;
-    let height_end = if let Some(height_end) = height_end {
-        height_end
-    } else {
-        u64::MAX
-    };
+    let height_end = args.near_block_height_end.unwrap_or(u64::MAX);
 
     // Build input stream
     let mut input_stream = match config.input_mode {
