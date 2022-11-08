@@ -4,14 +4,16 @@ mod conversion;
 mod input;
 mod matcher;
 
-use std::path::PathBuf;
-
 use clap::Parser;
 use cli::Cli;
+use config::{InputMode, OutputStoreConfig};
 
 use aurora_standalone_engine::EngineContext;
-use aurora_refiner_lib::{self, BlockWithMetadata, near_stream::NearStream};
+use aurora_refiner_lib::{self, near_stream::NearStream};
 use aurora_refiner_types::{near_block::NEARBlock, aurora_block::AuroraBlock};
+
+use std::path::{PathBuf};
+use tokio::io::AsyncWriteExt;
 
 #[tokio::main]
 async fn main() {
@@ -36,7 +38,7 @@ async fn main() {
 
     // Build input stream
     let mut input_stream = match config.input_mode {
-        config::InputMode::DataLake(config) => {
+        InputMode::DataLake(config) => {
             input::data_lake::get_near_data_lake_stream(next_block, &config)
         }
         _ => panic!("For the moment there is only support for DataLake InputMode.")
@@ -63,23 +65,48 @@ async fn main() {
     let matcher = matcher::Matcher::new(args.near_block_expression, args.aurora_block_expression);
 
     // Process
-    // while let Some(message) = input_stream.recv().await {
+    while let Some(message) = input_stream.recv().await {
 
-    //     let near_block = message.block;
-    //     let aurora_blocks = near_to_aurora_stream.next_block(near_block);
+        let near_block = message.block;
+        let aurora_blocks = near_to_aurora_stream.next_block(&near_block);
 
-    //     if(matcher.matches(&near_block, &aurora_blocks))
-    //     {
-    //         save_output(&near_block, &aurora_blocks);
-    //         println!("Finder found match at near block height: {}", near_block.block.header.height);
-    //         println!("Output is on {}", config.output_storage.path);
-    //         return;
-    //     }
-    // }
+        if matcher.matches(&near_block, &aurora_blocks)
+        {
+            let path_buf = save_output(&near_block, &aurora_blocks, &config.output_storage).await;
+
+            println!("Finder found match at near block height: {}", near_block.block.header.height);
+            println!("Output is on file: {}", path_buf.into_os_string().into_string().unwrap());
+            return;
+        }
+    }
 
     println!("No match was found for your search.");
 }
 
-fn save_output(near_block: &NEARBlock, aurora_blocks: &Vec<AuroraBlock>) {
-    // ToDo
+async fn save_output(near_block: &NEARBlock, aurora_blocks: &Vec<AuroraBlock>, output_store_config: &OutputStoreConfig) -> PathBuf {
+
+    let folder_path = std::path::PathBuf::from(&output_store_config.path);
+
+    if !folder_path.exists() {
+        std::fs::create_dir_all(&folder_path).unwrap();
+    }
+
+    let mut tmp_path = folder_path.clone();
+    tmp_path.push(".PARTIAL");
+
+    let file = tokio::fs::File::create(&tmp_path).await.unwrap();
+
+    {
+        let mut writer = tokio::io::BufWriter::new(file);
+        let data = serde_json::to_string(&(near_block, aurora_blocks)).unwrap();
+        writer.write_all(data.as_bytes()).await.unwrap();
+        writer.flush().await.unwrap();
+    }
+
+    let mut target_path = folder_path;
+    target_path.push(format!("{}.json", near_block.block.header.height));
+
+    tokio::fs::rename(tmp_path, &target_path).await.unwrap();
+
+    target_path
 }
