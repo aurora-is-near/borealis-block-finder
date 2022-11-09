@@ -20,6 +20,16 @@ async fn main() {
 
     let args: Cli = Cli::parse();
 
+    // Build matcher
+    let matcher = matcher::Matcher::new(args.near_block_expression, args.aurora_block_expression);
+    let matcher = match matcher {
+        Ok(matcher) => matcher,
+        Err(e) => {
+            println!("Error parsing block expression. {}", e);
+            return;
+        }
+    };
+
     // Get config
     let config_path = args.config_path.as_deref().unwrap_or("default_config.json");
     let config: config::Config = {
@@ -62,9 +72,6 @@ async fn main() {
         config.refiner.chain_id,
         height_last,
         ctx);
-
-    // Build matcher
-    let matcher = matcher::Matcher::new(args.near_block_expression, args.aurora_block_expression);
 
     // Process
     while let Some(message) = input_stream.recv().await {
