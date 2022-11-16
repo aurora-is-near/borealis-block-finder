@@ -12,6 +12,7 @@ use aurora_standalone_engine::EngineContext;
 use aurora_refiner_lib::{self, near_stream::NearStream};
 use aurora_refiner_types::{near_block::NEARBlock, aurora_block::AuroraBlock};
 
+use serde::Serialize;
 use std::path::{PathBuf};
 use tokio::io::AsyncWriteExt;
 
@@ -86,9 +87,11 @@ async fn main() {
 
         if matcher.matches(&near_block, &aurora_blocks)
         {
-            let path_buf = save_output(&near_block, &aurora_blocks, &config.output_storage).await;
-
             println!("Finder found match at near block height: {}", near_block.block.header.height);
+            
+            let matched_data = MatchedData{near_block, aurora_blocks};
+            let path_buf = save_output(&matched_data, &config.output_storage).await;
+
             println!("Output is on file: {}", path_buf.into_os_string().into_string().unwrap());
             return;
         }
@@ -97,7 +100,7 @@ async fn main() {
     println!("No match was found for your search.");
 }
 
-async fn save_output(near_block: &NEARBlock, aurora_blocks: &Vec<AuroraBlock>, output_store_config: &OutputStoreConfig) -> PathBuf {
+async fn save_output(matched_data: &MatchedData, output_store_config: &OutputStoreConfig) -> PathBuf {
 
     let folder_path = std::path::PathBuf::from(&output_store_config.path);
 
@@ -112,15 +115,22 @@ async fn save_output(near_block: &NEARBlock, aurora_blocks: &Vec<AuroraBlock>, o
 
     {
         let mut writer = tokio::io::BufWriter::new(file);
-        let data = serde_json::to_string(&(near_block, aurora_blocks)).unwrap();
-        writer.write_all(data.as_bytes()).await.unwrap();
+        let json_data = serde_json::to_string(matched_data).unwrap();
+        writer.write_all(json_data.as_bytes()).await.unwrap();
         writer.flush().await.unwrap();
     }
 
     let mut target_path = folder_path;
-    target_path.push(format!("{}.json", near_block.block.header.height));
+    target_path.push(format!("{}.json", matched_data.near_block.block.header.height));
 
     tokio::fs::rename(tmp_path, &target_path).await.unwrap();
 
     target_path
+}
+
+#[derive(Serialize)]
+struct MatchedData {
+    near_block: NEARBlock,
+
+    aurora_blocks: Vec<AuroraBlock>,
 }
