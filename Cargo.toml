@@ -6,9 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-aurora-standalone-engine = { path = "../borealis-engine-lib/engine" }
-aurora-refiner-lib = { path = "../borealis-engine-lib/refiner-lib" }
-aurora-refiner-types = { path = "../borealis-engine-lib/refiner-types" }
+aurora-standalone-engine = { git = "https://github.com/aurora-is-near/borealis-engine-lib" }
+aurora-refiner-lib = { git = "https://github.com/aurora-is-near/borealis-engine-lib" }
+aurora-refiner-types = { git = "https://github.com/aurora-is-near/borealis-engine-lib" }
 
 serde_json = "1.0.83"
 serde = { version = "1", features = [ "derive" ] }
