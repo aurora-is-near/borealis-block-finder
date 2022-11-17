@@ -11,19 +11,9 @@ impl Matcher {
 
     pub fn new (near_block_expression: Option<String>, aurora_block_expression: Option<String>) -> Result<Self, Error> {
 
-        let near_block_regex = Matcher::try_build_regex(near_block_expression);
+        let near_block_regex = Matcher::try_build_regex(near_block_expression)?;
 
-        let near_block_regex = match near_block_regex {
-            Ok(regex_option) => regex_option,
-            Err(e) => return Err(e)
-        };
-
-        let aurora_block_regex = Matcher::try_build_regex(aurora_block_expression);
-
-        let aurora_block_regex = match aurora_block_regex {
-            Ok(regex_option) => regex_option,
-            Err(e) => return Err(e)
-        };
+        let aurora_block_regex = Matcher::try_build_regex(aurora_block_expression)?;
 
         Ok(Self { near_block_regex, aurora_block_regex })
     }

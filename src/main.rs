@@ -41,11 +41,7 @@ async fn main() {
 
     // Get start and end block heights
     let height_start = args.near_block_height_start;
-    let (height_last, height_next) = if let Some(height_start) = height_start {
-        (height_start.checked_sub(1), height_start)
-    } else {
-        (None, config.height_start_default)
-    };
+    let (height_last, height_next) = (height_start.checked_sub(1), height_start);
 
     let height_end = args.near_block_height_end.unwrap_or(u64::MAX);
 

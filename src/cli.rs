@@ -3,7 +3,7 @@ use clap::{Parser};
 //ToDo
 // Know how to deal with parameter with the '_'
 // Think in better names and/or shorts.
-// Parameter height default value explanation.
+// Parameter height forced!
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -17,7 +17,7 @@ pub struct Cli {
     /// [Optional] Starts refiner at the specified height.
     /// If this value is not passed, first height will be used.
     #[clap(short = 's', long)]
-    pub near_block_height_start: Option<u64>,
+    pub near_block_height_start: u64,
 
     /// [Optional] Ends refiner at the specified height.
     /// If this value is not passed, last height will be used.
