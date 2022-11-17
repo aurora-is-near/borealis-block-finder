@@ -83,6 +83,8 @@ async fn main() {
 
         if matcher.matches(&near_block, &aurora_blocks)
         {
+            input_stream.close();
+
             println!("Finder found match at near block height: {}", near_block.block.header.height);
             
             let matched_data = MatchedData{near_block, aurora_blocks};

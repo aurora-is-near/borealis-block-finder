@@ -14,8 +14,7 @@ pub struct Cli {
     #[clap(short = 'c', long)]
     pub config_path: Option<String>,
 
-    /// [Optional] Starts refiner at the specified height.
-    /// If this value is not passed, first height will be used.
+    /// [Forced] Starts refiner at the specified height.
     #[clap(short = 's', long)]
     pub near_block_height_start: u64,
 

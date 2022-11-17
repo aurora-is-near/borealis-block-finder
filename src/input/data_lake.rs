@@ -24,10 +24,19 @@ pub fn get_near_data_lake_stream(
         // instantiate the NEAR Lake Framework Stream
         let mut stream = near_lake_framework::streamer(opts);
         while let Some(block) = stream.recv().await {
-            sender
+            
+            let sender_result =
+                sender
                 .send(BlockWithMetadata::new(convert(block), ()))
-                .await
-                .unwrap();
+                .await;
+
+            match sender_result {
+                Ok(_) => continue,
+                Err(_) => {
+                    println!("Sender break here!");
+                    break;
+                },
+            }
         }
     });
 
