@@ -1,46 +1,81 @@
 use aurora_refiner_types::{near_block::NEARBlock, aurora_block::AuroraBlock};
-use regex::{Regex, Error};
+use jmespath::{Expression, JmespathError, Runtime};
 
-pub struct Matcher {
-    near_block_regex: Option<Regex>,
+pub struct Matcher<'a>{
 
-    aurora_block_regex: Option<Regex>,
+    runtime: Runtime,
+
+    near_block_expression: Option<Expression<'a>>,
+
+    aurora_block_expression: Option<Expression<'a>>,
 }
 
-impl Matcher {
+impl Matcher<'_> {
 
-    pub fn new (near_block_expression: Option<String>, aurora_block_expression: Option<String>) -> Result<Self, Error> {
+    pub fn new (near_block_expression: Option<String>, aurora_block_expression: Option<String>) -> Result<Self, JmespathError> {
 
-        let near_block_regex = Matcher::try_build_regex(near_block_expression)?;
+        let runtime = jmespath::create_default_runtime();
 
-        let aurora_block_regex = Matcher::try_build_regex(aurora_block_expression)?;
+        // near expression
+        let near_block_expression = match near_block_expression {
+            None => Ok(None),
+            Some(s) => {
+                let expression = runtime.compile(&s);
+                match expression {
+                    Err(e) => Err(e),
+                    Ok(expression) => Ok(Some(expression))
+                }
+            }
+        };
 
-        Ok(Self { near_block_regex, aurora_block_regex })
+        let near_block_expression = near_block_expression?;
+
+        // aurora expression
+        let aurora_block_expression = match aurora_block_expression {
+            None => Ok(None),
+            Some(s) => {
+                let expression = runtime.compile(&s);
+                match expression {
+                    Err(e) => Err(e),
+                    Ok(expression) => Ok(Some(expression))
+                }
+            }
+        };
+
+        let aurora_block_expression = aurora_block_expression?;
+
+        // matcher
+        Ok(Self { runtime, near_block_expression, aurora_block_expression })
     }
 
     pub fn matches(&self, near_block: &NEARBlock, aurora_blocks: &Vec<AuroraBlock>) -> bool {
         
         // near block condition
-        let near_block_condition = match &self.near_block_regex {
+        let near_block_condition = match &self.near_block_expression {
             None => true,
-            Some(regex) =>
+            Some(expression) =>
             {
-                let near_block_data = serde_json::to_string(&near_block).unwrap();
-                regex.is_match(&near_block_data)
+                let json = serde_json::to_string(&near_block).unwrap();
+                let variable = jmespath::Variable::from_json(&json).unwrap();
+                let result = expression.search(variable).unwrap();
+                result.is_truthy()
             }
         };
 
         // aurora blocks condition (any of them)
-        let aurora_blocks_condition = match &self.aurora_block_regex {
+        let aurora_blocks_condition = match &self.aurora_block_expression {
             None => true,
-            Some(regex) =>
+            Some(expression) =>
             {
                 let mut match_found = false;
 
                 for aurora_block in aurora_blocks {
 
-                    let aurora_block_data = serde_json::to_string(&aurora_block).unwrap();
-                    if regex.is_match(&aurora_block_data)
+                    let json = serde_json::to_string(&aurora_block).unwrap();
+                    let variable = jmespath::Variable::from_json(&json).unwrap();
+                    let result = expression.search(variable).unwrap();
+
+                    if result.is_truthy()
                     {
                         match_found = true;
                         break;
@@ -52,24 +87,5 @@ impl Matcher {
         };
 
         near_block_condition && aurora_blocks_condition
-    }
-
-    fn try_build_regex(expression: Option<String>) -> Result<Option<Regex>, Error> {
-
-        // Scenarios:
-        // expression is none => ok none
-        // expression is some string but not a regex => error
-        // expression is some string and a regex => ok regex
-
-        match expression {
-            None => Ok(None),
-            Some(s) => {
-                let regex = Regex::new(&s);
-                match regex {
-                    Err(e) => Err(e),
-                    Ok(regex) => Ok(Some(regex))
-                }
-            }
-        }
     }
 }

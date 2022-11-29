@@ -6,9 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-aurora-standalone-engine = { git = "https://github.com/aurora-is-near/borealis-engine-lib" }
-aurora-refiner-lib = { git = "https://github.com/aurora-is-near/borealis-engine-lib" }
-aurora-refiner-types = { git = "https://github.com/aurora-is-near/borealis-engine-lib" }
+aurora-standalone-engine = { git = "https://github.com/aurora-is-near/borealis-engine-lib", tag = "v0.15.0" }
+aurora-refiner-lib = { git = "https://github.com/aurora-is-near/borealis-engine-lib", tag = "v0.15.0" }
+aurora-refiner-types = { git = "https://github.com/aurora-is-near/borealis-engine-lib", tag = "v0.15.0" }
 
 serde_json = "1.0.83"
 serde = { version = "1", features = [ "derive" ] }
@@ -21,3 +21,4 @@ tokio-stream = { version = "0.1" }
 near-lake-framework = "0.3.0"
 
 regex = "1.7.0"
+jmespath = { git = "https://github.com/Casuso/jmespath.rs" }
